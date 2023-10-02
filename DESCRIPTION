@@ -1,0 +1,21 @@
+Package: epiclean
+Title: epiclean
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Catherine",
+           family = "Eisenhauer",
+           role = c("aut", "cre"),
+           email = "caeisenhauer@gmail.com")
+Description: `epiclean` is a convenience package to help with data cleaning and wrangling tasks typical to epidemiology. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.2
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    stringr,
+    magrittr,
+    stringi,
+    tidytable (>= 0.10.1)
