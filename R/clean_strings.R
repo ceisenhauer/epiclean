@@ -14,8 +14,20 @@
 #'   hyphens will not be replaced.
 #'
 #' @examples
-#'  x <- c(' too    many spaces  ',
-#'         '\u00c5ccents ar\u00e9 the w\u00f4rst')
+#' x <- c(' too    many spaces  ',
+#'        ' A whol\u009   buNCh of   things-to-change',
+#'        '\u00c5ccents ar\u00e9 the w\u00f4rst')
+#' 
+#' clean_strings(x)
+#' 
+#' clean_strings(x,
+#'               to_lower = TRUE)
+#' 
+#' clean_strings(x,
+#'               to_lower = TRUE,
+#'               replace_spaces = '_',
+#'               replace_hyphens = '#')
+#'
 #'
 #' @importFrom stringi stri_trans_general
 #' @importFrom stringr str_replace str_squish
