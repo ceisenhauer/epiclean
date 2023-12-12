@@ -5,6 +5,12 @@
 #' weekly). TODO: allow behavior to check number of observations by arbitrary groups (example use
 #' case: checking number of followups for a longitudinal study or number of households per area).
 #' todo: option to complete if obs are missing
+#'
+#'
+check_observations <- function(df, groups = NULL, frequency = 'weekly', 
+                               n_groups = NULL, n_observations = NULL) {
+  df
+}
 
 
 
