@@ -4,10 +4,27 @@
 \alias{clean_strings}
 \title{Clean Strings}
 \usage{
-clean_strings(x)
+clean_strings(
+  x,
+  transliterate = "Latin-ASCII",
+  to_lower = FALSE,
+  replace_spaces = NULL,
+  replace_hyphens = NULL
+)
 }
 \arguments{
 \item{x}{\verb{chr vct} Character vector to be cleaned.}
+
+\item{transliterate}{\verb{chr vct} String or character vector of transliterations; passed directly
+to shtringi stri_trans_general.}
+
+\item{to_lower}{\code{bool} If TRUE, strings will be converted to lower case. Default is FALSE.}
+
+\item{replace_spaces}{\code{chr} String that will replace spaces (unless NULL). Default is NULL, ie:
+spcaes will not be replaced.}
+
+\item{replace_hyphens}{\code{chr} String that will replace hyphens (unless NULL). Default is NULL, ie:
+hyphens will not be replaced.}
 }
 \description{
 Cleans strings to squish unwanted spaces and translate non-ascii characters.
@@ -15,7 +32,19 @@ TODO: Optionally translate to lower, upper, or title case. Optionally replace sp
 with underscores.
 }
 \examples{
- x <- c(' too    many spaces  ',
-        '\u00c5ccents ar\u00e9 the w\u00f4rst')
+x <- c(' too    many spaces  ',
+       ' A whol\u009   buNCh of   things-to-change',
+       '\u00c5ccents ar\u00e9 the w\u00f4rst')
+
+clean_strings(x)
+
+clean_strings(x,
+              to_lower = TRUE)
+
+clean_strings(x,
+              to_lower = TRUE,
+              replace_spaces = '_',
+              replace_hyphens = '#')
+
 
 }
