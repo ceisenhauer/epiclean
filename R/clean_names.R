@@ -7,12 +7,32 @@
 #' [tidytable].
 #' todo: convert to method style to preserve var type between data.frame, tibble, and tidytable
 #'
-#' importFrom hmatch hmatch_composite hmatch_tokens
-#' importFrom rio import export
-#' importFrom rlang .data
-#' importFrom stringr str_replace
-#' importFrom tidytable all_of anti_join any_of bind_rows distinct inner_join mutate rename_with
+#' @param df `dataframe` Dataframe to be checked.
+#' @param by `chr vct` Column name(s) in `df` to be checked against `ref`. Default is to look for 
+#'   columns called `adm1` and `adm2`.
+#' @param code_col `chr` Column in `ref` to be used as the code column, for example for matching to 
+#'   a `fixes` dataset. Default is `pcode`.
+#' @param ref `dataframe` Dataframe of reference data. **NOTE**, at least one of `ref` or `fn_ref`
+#'   *must* be provided. If both are provided only `ref` is considered.
+#' @param fn_ref `chr` Path to a set of reference data. **NOTE**, at least one of `ref` or `fn_ref`
+#'   *must* be provided. If both are provided only `ref` is considered.
+#' @param fixes `dataframe` Dataframe of manual fixes. This dataframe *must* contain the a code 
+#'   column with the appropriate name (as specified by `code_col`).
+#' @param fn_fixes `chr` Path to set of manual fixes data. This data *must* contain the a code 
+#'   column with the appropriate name (as specified by `code_col`).
+#' @param save_unmatched `bool` If TRUE, unmatched values will be saved to `fn_fixes` for the user
+#'   to provide manual fixes. Default behavior is for this to happen whenever `fn_fixes` is not NULL
+#'   and not otherwise.
+#' @param require_all `bool` If TRUE, `clean_names()` will return an error if it fails to find a
+#'   match for all values. Default is TRUE.
+#' @param keep_raw `bool` If TRUE, the original unmatched data will be retained in the returned
+#'   output. The relevant columns will have "_raw" appended to their names. Default is FALSE.
+#'
+#' @importFrom rio import export
+#' @importFrom stringr str_replace
+#' @importFrom tidytable all_of anti_join any_of bind_rows distinct inner_join mutate rename_with
 #'   select
+#' @export
 clean_names <- function(df,
                         by = c('adm1', 'adm2'),
                         code_col = 'pcode',
@@ -20,7 +40,7 @@ clean_names <- function(df,
                         fn_ref = NULL,
                         fixes = NULL,
                         fn_fixes = NULL,
-                        save_fixes = ifelse(is.null(fn_fixes), FALSE, TRUE),
+                        save_unmatched = ifelse(is.null(fn_fixes), FALSE, TRUE),
                         require_all = TRUE,
                         keep_raw = FALSE) {
 
@@ -67,7 +87,7 @@ clean_names <- function(df,
                                         code_col = code_col,
                                         fuzzy = TRUE,
                                         type = 'resolve_inner') %>%
-      tidytable::select(-rlang::.data$match_type)
+      tidytable::select(-any_of('match_type'))
 
     remaining <- hmatch::hmatch_composite(raw = tmp, 
                                           ref = ref,
@@ -93,7 +113,7 @@ clean_names <- function(df,
 
   # REPORT AND (OPTIONALLY SAVE) UNMATCHED VALUES --------------------------------------------------
   # if there are STILL unmatched values, tell user to update fixes
-  # if save_fixes is true, the user can update fn_fixes, otherwise fixes must be updated inline
+  # if save_unmatched is true, the user can update fn_fixes, otherwise fixes must be updated inline
   if (nrow(remaining != 0)) {
     remaining <- remaining %>%
       tidytable::select(tidytable::all_of(by)) %>%
@@ -102,7 +122,7 @@ clean_names <- function(df,
     writeLines(paste0('oh no, unable to find matches for the following values:'))
     print(remaining)
 
-    if (save_fixes) {
+    if (save_unmatched) {
       writeLines(paste0('unmated values added to fixes file; please add your manual fixes to: ',
                         fn_fixes))
 
