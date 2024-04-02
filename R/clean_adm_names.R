@@ -2,9 +2,8 @@
 #'
 #' @description Convenience wrapper for a pipeline of name cleaning methods using the package 
 #' [hatch](https://epicentre-msf.github.io/hmatch/index.html) for hierarchical fuzzy matching. 
-#' If hmatch is not installed, `clean_names()` can still take a manual fixes file and apply those
-#' corrections to the dataset. **Warning:** at present, this function will necessarily return a 
-#' [tidytable].
+#' If hmatch is not installed, `clean_adm_names()` can still take a manual fixes file and apply
+#' thosecorrections to the dataset. 
 #' todo: convert to method style to preserve var type between data.frame, tibble, and tidytable
 #'
 #' @param df `dataframe` Dataframe to be checked.
@@ -30,8 +29,7 @@
 #'
 #' @importFrom rio import export
 #' @importFrom stringr str_replace
-#' @importFrom tidytable all_of anti_join any_of bind_rows distinct inner_join mutate rename_with
-#'   select
+#' @importFrom dplyr all_of anti_join any_of bind_rows distinct inner_join mutate rename_with select
 #' @export
 clean_names <- function(df,
                         by = c('adm1', 'adm2'),
@@ -44,9 +42,9 @@ clean_names <- function(df,
                         require_all = TRUE,
                         keep_raw = FALSE) {
 
-  tmp <- df %>%
-    tidytable::select(tidytable::all_of(by)) %>%
-    tidytable::distinct()
+  tmp <- df |>
+    dplyr::select(dplyr::all_of(by)) |>
+    dplyr::distinct()
 
 
   # WRANGLE REFERENCE AND FIXES DATA ---------------------------------------------------------------
@@ -55,16 +53,16 @@ clean_names <- function(df,
     stop('you must provide reference data via either a dataframe (`ref`) or a file (`fn_ref`)')
 
   } else if (is.null(ref)) {
-    ref <- rio::import(fn_ref) %>%
-      tidytable::select(tidytable::all_of(c(by, code_col))) %>%
-      tidytable::distinct()
+    ref <- rio::import(fn_ref) |>
+      dplyr::select(dplyr::all_of(c(by, code_col))) |>
+      dplyr::distinct()
   }
 
 
   # load data in fn_fixes (if there is any) and then row bind the data in fixes (if there is any)
   if (!is.null(fn_fixes) && file.exists(fn_fixes)) {
-    fixes <- rio::import(fn_fixes) %>%
-      tidytable::bind_rows(fixes)
+    fixes <- rio::import(fn_fixes) |>
+      dplyr::bind_rows(fixes)
   }
 
 
@@ -74,8 +72,8 @@ clean_names <- function(df,
                    '`devtools::install_github("epicentre-msf/hmatch")`. without {hmatch}, ',
                    '`clean_names()` will consider manual fix data only.'))
 
-    matched <- tidytable::inner_join(tmp, ref)
-    remaining <- tidytable::anti_join(tmp, ref)
+    matched <- dplyr::inner_join(tmp, ref)
+    remaining <- dplyr::anti_join(tmp, ref)
 
 
   # RUN MATCHING WITH HMATCH (IF INSTALLED) --------------------------------------------------------
@@ -86,8 +84,8 @@ clean_names <- function(df,
                                         man = fixes,
                                         code_col = code_col,
                                         fuzzy = TRUE,
-                                        type = 'resolve_inner') %>%
-      tidytable::select(-any_of('match_type'))
+                                        type = 'resolve_inner') |>
+      dplyr::select(-any_of('match_type'))
 
     remaining <- hmatch::hmatch_composite(raw = tmp, 
                                           ref = ref,
@@ -99,12 +97,12 @@ clean_names <- function(df,
 
     # if there are still unmated values, try tokens
     if (nrow(remaining != 0)) {
-      matched <- remaining %>% 
+      matched <- remaining |> 
         hmatch::hmatch_tokens(ref = ref,
-                              type = 'resolve_inner') %>%
-        tidytable::bind_rows(matched)
+                              type = 'resolve_inner') |>
+        dplyr::bind_rows(matched)
 
-      remaining <- remaining %>% 
+      remaining <- remaining |> 
         hmatch::hmatch_tokens(ref = ref,
                               type = 'resolve_anti') 
     }
@@ -115,9 +113,9 @@ clean_names <- function(df,
   # if there are STILL unmatched values, tell user to update fixes
   # if save_unmatched is true, the user can update fn_fixes, otherwise fixes must be updated inline
   if (nrow(remaining != 0)) {
-    remaining <- remaining %>%
-      tidytable::select(tidytable::all_of(by)) %>%
-      tidytable::mutate(code_col := '')
+    remaining <- remaining |>
+      dplyr::select(dplyr::all_of(by)) |>
+      dplyr::mutate(code_col := '')
 
     writeLines(paste0('oh no, unable to find matches for the following values:'))
     print(remaining)
@@ -126,8 +124,8 @@ clean_names <- function(df,
       writeLines(paste0('unmated values added to fixes file; please add your manual fixes to: ',
                         fn_fixes))
 
-      remaining %>%
-        tidytable::bind_rows(fixes) %>%
+      remaining |>
+        dplyr::bind_rows(fixes) |>
         rio::export(fn_fixes)
     }
 
@@ -141,18 +139,18 @@ clean_names <- function(df,
 
 
   # RETURN DF WITH MATCH RESULTS -------------------------------------------------------------------
-  out <- df %>%
-    tidytable::left_join(matched) %>%
-    tidytable::rename_with(~ paste0(.x,
-                                    '_raw',
-                                    recycle0 = TRUE),
-                           tidytable::all_of(by)) %>%
-    tidytable::rename_with(~stringr::str_replace(.x, 'ref_', ''),
-                           tidytable::all_of(paste0('ref_', by)))
+  out <- df |>
+    dplyr::left_join(matched) |>
+    dplyr::rename_with(~ paste0(.x,
+                                '_raw',
+                                recycle0 = TRUE),
+                       dplyr::all_of(by)) |>
+    dplyr::rename_with(~stringr::str_replace(.x, 'ref_', ''),
+                       dplyr::all_of(paste0('ref_', by)))
 
   if (!keep_raw) {
-    out <- out %>%
-      tidytable::select(!tidytable::any_of(paste0(by, '_raw')))
+    out <- out |>
+      dplyr::select(!dplyr::any_of(paste0(by, '_raw')))
   }
 
   if (nrow(out) != nrow(df)) {

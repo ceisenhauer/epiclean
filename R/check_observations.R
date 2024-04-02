@@ -7,10 +7,10 @@
 #' todo: option to complete if obs are missing
 #'
 #'
-check_observations <- function(df, groups = NULL, frequency = 'weekly', 
-                               n_groups = NULL, n_observations = NULL) {
-  df
-}
+#check_observations <- function(df, groups = NULL, frequency = 'weekly', 
+                               #n_groups = NULL, n_observations = NULL) {
+  #df
+#}
 
 
 
